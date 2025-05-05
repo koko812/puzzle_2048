@@ -126,19 +126,12 @@ const move = (direction) => {
         result = bin.filter(v => !!v)
         result.length = 4
 
-        for(let i = 0; i < result.length; i++){
-            if(!result[i]){
-                result[i] = false 
-            }
-        }
-        console.log('before: ',bin, result);
         if (direction === 'down' || direction === 'right') {
             result.reverse()
         }
         // これで undefined じゃなくて null が詰められるのがよくわからん
         // https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Global_Objects/Array/length ここに null が埋められるしようが載っている
 
-        console.log('after: ', bin, result);
         for (let pos = 0; pos < width; pos++) {
             if (direction === 'left' || direction === 'right') {
                 board[index][pos] = result[pos]
