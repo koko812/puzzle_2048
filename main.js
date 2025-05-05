@@ -3,7 +3,9 @@ const height = 4
 const size = 300 / 4
 
 
-class panel {
+// 大文字にしておかないと，後でインスタンスとの区別がつかなくなって困る
+// というか，panel という名前でインスタンスを宣言できなくなって不便
+class Panel {
     constructor(x, y, value) {
         const div = document.createElement('div')
         this.div = div
@@ -57,12 +59,28 @@ class panel {
 
     // constructor ないの関数定義は，普通の関数定義
     setPosition(x, y) {
+        if (this.prevPanels) {
+            for (const panel of this.prevPanels) {
+                // すぐに消すんじゃなくて，こいつ自身の目的地に一緒に連れていきながら消すということをやってる
+                // 天才か？
+                // マジで，t-kihira 天才すぎて震えている
+                panel.setPosition(x, y)
+                setTimeout(() => panel.show(false), 150)
+
+            }
+        }
+        // こんな大胆な変更をして，ぶっ壊れないのが謎
+        if (this.x === x && this.y === y) {
+            return false
+        }
         this.x = x
         this.y = y
         // this を忘れるな！
         // constructor ないで呼び出す時も，this を介して動くということを覚えておこう
         this.div.style.top = `${size * y}px`
         this.div.style.left = `${size * x}px`
+
+        return true
     }
 
     // 後から数字を変える可能性があるので，この辺は当然必要
@@ -74,6 +92,11 @@ class panel {
     setValue(value) {
         this.value = value
         this.div.textContent = `${value}`
+    }
+
+    setPrevPanels(prevPanels) {
+        // パネルが，足し算が複数個重なってきたときもこれで大丈夫なのかという感じはある
+        this.prevPanels = prevPanels
     }
 }
 
@@ -95,10 +118,12 @@ const createNewPanel = () => {
     const [x, y] = availableList[Math.trunc(Math.random() * availableList.length)]
     //board[y][x] = 2
     // パネパネを直接入れる模様，まあ確かにそれが妥当だよな，後からもいじりやすい
-    board[y][x] = new panel(x, y, 2)
+    board[y][x] = new Panel(x, y, 2)
 }
 
+// 動いたら，新しいパネパネを生成したい
 const move = (direction) => {
+    let isMove = false
     // 一旦実装の方針を見てみるスタイルで
     // そもそもどういう動きをしてくれたら嬉しいのかを考えながら確認しよう
     // オッケーまあ理解できた気はする
@@ -139,7 +164,15 @@ const move = (direction) => {
             if (current && next && current.value == next.value) {
                 current.show(false)
                 next.show(false)
-                result[pos] = new panel(-1, -1, current.value + next.value)
+                // ここで，result をいじりにいくのか，current をいじるのかで悩む時点でアホ
+                // だが，そういうのをリアルタイムで考えていけるようになりたい, 今のままだと LLM とやってること変わらん猿真似だよ
+                // pos はどうせ後で指定されるので，適当に指定，むしろ変な値入れる方が嫌か
+                const panel = new Panel(-1, -1, current.value + next.value)
+                // ここの動作がよくわかってない，動作というか，新しい panel に前のパネルを追加するのがよくわからん？?
+                // とかちょっっと思ってたけど，新しく生成したパネルが，元あったパネルの消去まで面倒見るという考え方なら，むしろ納得がいくような気がする
+                // 流石 t-kihira だ.
+                panel.setPrevPanels([current, next])
+                result[pos] = panel
                 result[pos + 1] = null
             }
         }
@@ -159,15 +192,20 @@ const move = (direction) => {
             if (direction === 'left' || direction === 'right') {
                 board[index][pos] = result[pos]
                 if (result[pos]) {
-                    result[pos].setPosition(pos, index)
+                    // この書き方超オシャレなんだけど，一般的？？
+                    // 何を食ったらこんな書き方を思いつく？？
+                    isMove = result[pos].setPosition(pos, index) || isMove
                 }
             } else {
                 board[pos][index] = result[pos]
                 if (result[pos]) {
-                    result[pos].setPosition(index, pos)
+                    isMove = result[pos].setPosition(index, pos) || isMove
                 }
             }
         }
+    }
+    if (isMove) {
+        createNewPanel()
     }
 }
 
@@ -200,7 +238,7 @@ const init = () => {
     // 次は各数字が入ったマスの召喚が必要
     // createCell みたいな名前でいいんだろうか
     // 模倣じゃなくて，全く新しいゲームを作る時は，全くあたらしい実装が必要なはず
-    //new panel(2, 2, 2048)
+    //new Panel(2, 2, 2048)
     // こんな感じに，論文にもコメントを入れていけたらなかなかいいんじゃないかと思うんだけど
     // まあフォーマットの問題とかで難しそうではあるが，HTML 版とかを使えば，全然できないこともないようにおもえる
     // （HTML に対応してない時代のやつは厳しく，そもそも HTML に変換するツールから必要になってくるな）
@@ -220,6 +258,32 @@ const init = () => {
             move(id)
         }
     }
+
+    // addEventlisner と hoge.pointerdown の違いは，元から用意されてるかされてないかの違いだろうか
+    document.addEventListener('keydown', function (e) {
+        //console.log(e.key.toLowerCase().slice(5));
+        move(e.key.toLowerCase().slice(5))
+
+        /*
+        switch (e.key) {
+            case 'ArrowUp':
+                move('up')
+                break;
+            case 'ArrowDown':
+                move('down')
+                break;
+            case 'ArrowLeft':
+                move('left')
+                break;
+            case 'ArrowRight':
+                move('right')
+                break;
+            default:
+                break;
+        }
+        */
+        // こんなだせえコード必要ない
+    });
 }
 
 
