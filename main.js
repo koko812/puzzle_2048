@@ -92,9 +92,10 @@ const createNewPanel = () => {
             }
         }
     }
-    const [x,y] = availableList[Math.trunc(Math.random()*availableList.length)]
-    board[y][x] = 2
-    new panel(x,y,2)
+    const [x, y] = availableList[Math.trunc(Math.random() * availableList.length)]
+    //board[y][x] = 2
+    // パネパネを直接入れる模様，まあ確かにそれが妥当だよな，後からもいじりやすい
+    board[y][x] = new panel(x, y, 2)
 }
 
 // いつも思うが，配列の初期化は，後から append する場合でも const でいいみたい？
@@ -127,9 +128,24 @@ const init = () => {
     // createCell みたいな名前でいいんだろうか
     // 模倣じゃなくて，全く新しいゲームを作る時は，全くあたらしい実装が必要なはず
     //new panel(2, 2, 2048)
+    // こんな感じに，論文にもコメントを入れていけたらなかなかいいんじゃないかと思うんだけど
+    // まあフォーマットの問題とかで難しそうではあるが，HTML 版とかを使えば，全然できないこともないようにおもえる
+    // （HTML に対応してない時代のやつは厳しく，そもそも HTML に変換するツールから必要になってくるな）
+
     createNewPanel()
     createNewPanel()
+
+    // ここの定義の仕方，普通にスマートすぎて素晴らしいです
+    const idList = ['left', 'up', 'down', 'right']
+    for (const id of idList) {
+        document.getElementById(id).onpointerdown = (e) => {
+            e.preventDefault();
+            console.log(id);
+            //move()
+        }
+    }
 }
+
 
 window.onload = () => {
     init()
