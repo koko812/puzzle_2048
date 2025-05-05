@@ -98,6 +98,11 @@ class Panel {
         // パネルが，足し算が複数個重なってきたときもこれで大丈夫なのかという感じはある
         this.prevPanels = prevPanels
     }
+
+    setGameOver() {
+        this.div.style.backgroundColor = '#f88'
+        this.div.style.borderColor = '#844'
+    }
 }
 
 // まずは createNew パネパネをしていくという話
@@ -119,6 +124,10 @@ const createNewPanel = () => {
     //board[y][x] = 2
     // パネパネを直接入れる模様，まあ確かにそれが妥当だよな，後からもいじりやすい
     board[y][x] = new Panel(x, y, 2)
+
+    if (availableList.length === 1) {
+        return true
+    }
 }
 
 // 動いたら，新しいパネパネを生成したい
@@ -205,9 +214,35 @@ const move = (direction) => {
         }
     }
     if (isMove) {
-        createNewPanel()
+        if (createNewPanel()) {
+            flag = true
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const current = board[y][x]
+                    // 全マスに対して判定するので，left や up は必要ない
+                    const right = board[y][x + 1]
+                    const down = board[y + 1] && board[y + 1][x]
+
+                    // これの right とかは必要なんだろうか，なさそうだけどな
+                    // undefined 同士を比較したら true が帰ってくるんだろうか，わからんな
+                    // それが null の問題なのか
+                    if (right && current.value == right.value) {
+                        flag = false
+                    }
+                    if (down && current.value == down.value) {
+                        flag = false
+                    }
+                }
+            }
+            if (flag) {
+                for (const panel of board.flat()) {
+                    panel.setGameOver()
+                }
+            }
+        }
     }
 }
+// 流石にこのメソッドはデカすぎる
 
 // いつも思うが，配列の初期化は，後から append する場合でも const でいいみたい？
 // そもそも，let と const のコンパイラというか，言語としての設計方法が気になるかも
