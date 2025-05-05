@@ -98,6 +98,50 @@ const createNewPanel = () => {
     board[y][x] = new panel(x, y, 2)
 }
 
+const move = (direction) => {
+    // 一旦実装の方針を見てみるスタイルで
+    // そもそもどういう動きをしてくれたら嬉しいのかを考えながら確認しよう
+    // オッケーまあ理解できた気はする
+
+    // これ，height と width に分けるのは正方形なので不要
+    // むしろややこしいので，そういうことはしない方がいい？まあでも，長方形型に拡張したくなったらすぐできるのは嬉しいけど，
+    // その場合，ここのアルゴリズムをそれなりに書き換える必要があるかも？(意外とそのままいけるかも)
+
+    // 全部上に行くエラーが発生
+    for (let index = 0; index < height; index++) {
+        let bin = []
+        for (let pos = 0; pos < width; pos++) {
+            if (direction === 'left' || direction === 'right') {
+                bin[pos] = board[index][pos]
+            } else {
+                bin[pos] = board[pos][index]
+            }
+        }
+        bin = bin.filter(v => !!v)
+        bin.length = 4
+
+        if (direction === 'down' || direction === 'right') {
+            bin.reverse()
+        }
+        // これで undefined じゃなくて null が詰められるのがよくわからん
+        // https://developer.mozilla.org/ja/docs/Web/JavaScript/Reference/Global_Objects/Array/length ここに null が埋められるしようが載っている
+
+        for (let pos = 0; pos < width; pos++) {
+            if (direction === 'left' || direction === 'right') {
+                board[index][pos] = bin[pos]
+                if(bin[pos]){
+                    bin[pos].setPosition(pos, index)
+                }
+            } else {
+                board[pos][index] = bin[pos]
+                if(bin[pos]){
+                    bin[pos].setPosition(index, pos)
+                }
+            }
+        }
+    }
+}
+
 // いつも思うが，配列の初期化は，後から append する場合でも const でいいみたい？
 // そもそも，let と const のコンパイラというか，言語としての設計方法が気になるかも
 const board = []
@@ -136,12 +180,15 @@ const init = () => {
     createNewPanel()
 
     // ここの定義の仕方，普通にスマートすぎて素晴らしいです
+    // 一旦ここで区切って実装してるけど，鳥頭なので
+    // できれば一気に実装できるくらいの実力が欲しい
+    // まあでも，init の中に入れるよね，という常識がついてるのはいいことだと思う
     const idList = ['left', 'up', 'down', 'right']
     for (const id of idList) {
         document.getElementById(id).onpointerdown = (e) => {
             e.preventDefault();
             console.log(id);
-            //move()
+            move()
         }
     }
 }
