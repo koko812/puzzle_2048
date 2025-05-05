@@ -108,6 +108,7 @@ const move = (direction) => {
     // その場合，ここのアルゴリズムをそれなりに書き換える必要があるかも？(意外とそのままいけるかも)
 
     // 全部上に行くエラーが発生
+    // move に direction を渡し忘れてただけでした，クソが
     for (let index = 0; index < height; index++) {
         const bin = []
         for (let pos = 0; pos < width; pos++) {
@@ -131,7 +132,18 @@ const move = (direction) => {
             bin.reverse()
         }
 
-        result = bin.filter(v => !!v)
+        let result = bin.filter(v => !!v)
+        for (let pos = 0; pos < 4; pos++) {
+            const current = result[pos]
+            const next = result[pos + 1]
+            if (current && next && current.value == next.value) {
+                current.show(false)
+                next.show(false)
+                result[pos] = new panel(-1, -1, current.value + next.value)
+                result[pos + 1] = null
+            }
+        }
+        result = result.filter(v => !!v)
         result.length = 4
 
         // この辺を入れなかったら，left/right で場合分けが必要になってめんどくさい
